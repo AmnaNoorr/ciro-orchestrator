@@ -1,0 +1,26 @@
+{
+  "c-001": {
+    "kpis": {
+      "congestionReduced": 45,
+      "routesCleared": 3,
+      "alertsSent": 1240,
+      "unitsDispatched": 2
+    },
+    "blockedRoutes": [
+      [{"lat": 33.6670, "lng": 72.9911}, {"lat": 33.6650, "lng": 72.9950}],
+      [{"lat": 33.6650, "lng": 72.9950}, {"lat": 33.6620, "lng": 72.9920}]
+    ],
+    "reroutedPaths": [
+      [{"lat": 33.6670, "lng": 72.9911}, {"lat": 33.6700, "lng": 72.9900}],
+      [{"lat": 33.6700, "lng": 72.9900}, {"lat": 33.6720, "lng": 72.9980}],
+      [{"lat": 33.6720, "lng": 72.9980}, {"lat": 33.6650, "lng": 72.9950}]
+    ],
+    "ticket": {
+      "id": "TKT-8842",
+      "unit": "CDA Rescue Unit 4",
+      "eta": "12 mins",
+      "status": "DISPATCHED"
+    },
+    "alertMessage": "Alert sent to 1,240 users in G-10 regarding Flash Floods."
+  }
+}

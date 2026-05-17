@@ -1,0 +1,42 @@
+[
+  {
+    "id": "c-001",
+    "type": "Urban Flooding",
+    "location": "G-10, Islamabad",
+    "coordinates": {"lat": 33.6670, "lng": 72.9911},
+    "severity": "HIGH",
+    "timestamp": "2026-05-17T11:45:00Z",
+    "description": "Flash flood detected due to heavy rainfall. Traffic blocked and vehicles stranded.",
+    "confidence": 0.92,
+    "impacts": [
+      {"icon": "traffic", "text": "Traffic Blocked"},
+      {"icon": "car", "text": "Vehicles Stranded"},
+      {"icon": "home", "text": "Residential Damage Risk"}
+    ],
+    "recommendedActions": [
+      "Dispatch Emergency Units to Sector G-10/4",
+      "Send SMS Alert to Residents in 2km radius",
+      "Reroute Kashmir Highway Traffic"
+    ],
+    "explanation": "Based on NLP analysis of citizen reports ('G-10 mein pani bhar gaya hai') correlated with local weather station data and live traffic density patterns, AI concludes a 92% probability of severe urban flooding. Immediate intervention recommended to prevent casualties."
+  },
+  {
+    "id": "c-002",
+    "type": "Fire Hazard",
+    "location": "Blue Area, Islamabad",
+    "coordinates": {"lat": 33.7086, "lng": 73.0450},
+    "severity": "MEDIUM",
+    "timestamp": "2026-05-17T11:30:00Z",
+    "description": "Smoke reported near commercial plazas.",
+    "confidence": 0.78,
+    "impacts": [
+      {"icon": "building", "text": "Commercial Zone"},
+      {"icon": "wind", "text": "Air Quality Drop"}
+    ],
+    "recommendedActions": [
+      "Dispatch Fire Tenders from F-8 Station",
+      "Alert Nearby Hospitals"
+    ],
+    "explanation": "Multiple social media signals indicating smoke. Confidence is medium pending visual confirmation from smart cameras."
+  }
+]

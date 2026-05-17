@@ -1,0 +1,35 @@
+[
+  {
+    "crisisId": "c-001",
+    "logs": [
+      {
+        "agent": "SignalAgent",
+        "action": "Ingested Report",
+        "timestamp": "2026-05-17T11:45:02Z",
+        "reasoning": "Received input text 'G-10 mein pani bhar gaya hai'. Parsed language (Urdu) and extracted keywords [G-10, pani bhar, flood].",
+        "color": "#00E5FF"
+      },
+      {
+        "agent": "DetectionAgent",
+        "action": "Correlated Data",
+        "timestamp": "2026-05-17T11:45:04Z",
+        "reasoning": "Cross-referenced G-10 coordinates with Met Department rainfall data (45mm/hr). Identified high correlation. Set confidence to 92%.",
+        "color": "#FFC400"
+      },
+      {
+        "agent": "PlannerAgent",
+        "action": "Generated Response Plan",
+        "timestamp": "2026-05-17T11:45:06Z",
+        "reasoning": "Determined impact radii. Formulated plan: Dispatch 2 units, Alert users in 2km, Reroute traffic via Kashmir Highway.",
+        "color": "#FF3D00"
+      },
+      {
+        "agent": "SimulationAgent",
+        "action": "Simulated Rerouting",
+        "timestamp": "2026-05-17T11:45:08Z",
+        "reasoning": "Executed traffic simulation. Blocking primary routes in G-10. Calculated alternative paths with minimal congestion impact.",
+        "color": "#00E676"
+      }
+    ]
+  }
+]

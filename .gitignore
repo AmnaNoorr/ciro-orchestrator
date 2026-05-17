@@ -1,0 +1,35 @@
+# Flutter
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+
+# Android
+android/.kotlin/
+android/app/build/
+android/build/
+local.properties
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# macOS
+macos/Pods/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+android/**/*.log
+
+# Secrets (IMPORTANT)
+*.env
+google-services.json
+GoogleService-Info.plist
