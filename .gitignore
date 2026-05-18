@@ -30,6 +30,7 @@ macos/Pods/
 android/**/*.log
 
 # Secrets (IMPORTANT)
+venv/
 *.env
 google-services.json
 GoogleService-Info.plist
