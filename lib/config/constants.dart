@@ -3,13 +3,14 @@
 /// When false: Connects to real backend endpoints.
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-const bool kDemoMode = true;
+const bool kDemoMode = false;
 
 class AppConstants {
   // API Configuration
-  static const String baseUrl =
-      'http://localhost:3000'; // Replace with real URL when kDemoMode is false
-  static const String websocketUrl = 'ws://localhost:3000/live-updates';
+  // static const String baseUrl = 'http://10.0.2.2:8000';
+  static const String baseUrl = 'http://192.168.1.10:8000';
+  // static const String websocketUrl = 'ws://10.0.2.2:8000/ws';
+  static const String websocketUrl = 'ws://192.168.1.10:8000/ws';
 
   // Demo Specific
   static const int demoEventIntervalSeconds = 6;

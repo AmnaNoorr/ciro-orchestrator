@@ -5,7 +5,11 @@ import '../config/constants.dart';
 import '../models/simulation_model.dart';
 
 class SimulationService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: AppConstants.baseUrl));
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: AppConstants.baseUrl,
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 15),
+  ));
 
   Future<SimulationModel?> runSimulation(String crisisId) async {
     if (kDemoMode) {
@@ -21,8 +25,14 @@ class SimulationService {
       }
     } else {
       try {
-        final response = await _dio.post('/simulate/$crisisId');
-        return SimulationModel.fromJson(response.data);
+        final response = await _dio.get('/simulation/$crisisId');
+        final Map<String, dynamic> data = response.data;
+        if (data.containsKey(crisisId)) {
+          return SimulationModel.fromJson(data[crisisId]);
+        }
+        throw Exception("Simulation data missing for crisis $crisisId");
+      } on DioException catch (e) {
+        throw Exception('Failed to run simulation: ${e.message}');
       } catch (e) {
         throw Exception('Failed to run simulation: $e');
       }

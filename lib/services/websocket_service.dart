@@ -16,15 +16,38 @@ class WebSocketService {
     if (kDemoMode) {
       _startMockLiveFeed();
     } else {
+      _connectWebSocket();
+    }
+  }
+
+  void _connectWebSocket() {
+    try {
       _channel = WebSocketChannel.connect(Uri.parse(AppConstants.websocketUrl));
-      _channel!.stream.listen((message) {
-        try {
-          final data = json.decode(message);
-          _crisisStreamController.add(CrisisModel.fromJson(data));
-        } catch (e) {
-          print('WebSocket decode error: $e');
-        }
-      });
+      _channel!.stream.listen(
+        (message) {
+          try {
+            final payload = json.decode(message);
+            if (payload is Map<String, dynamic> && payload['event'] == 'crisis_detected') {
+              final data = payload['data'];
+              if (data != null) {
+                _crisisStreamController.add(CrisisModel.fromJson(data));
+              }
+            }
+          } catch (e) {
+            print('WebSocket decode error: $e');
+          }
+        },
+        onDone: () {
+          print('WebSocket disconnected, attempting reconnect...');
+          Future.delayed(const Duration(seconds: 3), _connectWebSocket);
+        },
+        onError: (error) {
+          print('WebSocket error: $error');
+        },
+      );
+    } catch (e) {
+      print('WebSocket connection error: $e');
+      Future.delayed(const Duration(seconds: 3), _connectWebSocket);
     }
   }
 

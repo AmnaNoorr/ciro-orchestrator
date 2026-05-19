@@ -28,6 +28,8 @@ class CrisisDetailScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(LucideIcons.cpu, color: AppTheme.neonBlue),
             onPressed: () {
+              final provider = Provider.of<CrisisProvider>(context, listen: false);
+              provider.selectCrisis(crisis);
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const TraceLogScreen()),

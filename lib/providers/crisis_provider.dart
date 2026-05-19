@@ -13,8 +13,8 @@ class CrisisProvider extends ChangeNotifier {
 
   List<CrisisModel> _crises = [];
   bool _isLoading = false;
-  
-  // Selected state
+  String? _errorMessage;
+
   CrisisModel? _selectedCrisis;
   TraceModel? _selectedTrace;
   SimulationModel? _selectedSimulation;
@@ -22,6 +22,7 @@ class CrisisProvider extends ChangeNotifier {
 
   List<CrisisModel> get crises => _crises;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
   CrisisModel? get selectedCrisis => _selectedCrisis;
   TraceModel? get selectedTrace => _selectedTrace;
   SimulationModel? get selectedSimulation => _selectedSimulation;
@@ -34,7 +35,6 @@ class CrisisProvider extends ChangeNotifier {
   void _initWebSocket() {
     _webSocketService.connect();
     _webSocketService.crisisStream.listen((newCrisis) {
-      // Add to top of list
       _crises.insert(0, newCrisis);
       notifyListeners();
     });
@@ -42,11 +42,13 @@ class CrisisProvider extends ChangeNotifier {
 
   Future<void> loadCrises() async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
-    
+
     try {
       _crises = await _apiService.getCrises();
     } catch (e) {
+      _errorMessage = e.toString();
       print("Error loading crises: $e");
     } finally {
       _isLoading = false;
@@ -56,17 +58,21 @@ class CrisisProvider extends ChangeNotifier {
 
   Future<bool> ingestSignal(String text, {String? imagePath}) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
-    
+
     bool success = false;
+
     try {
       success = await _apiService.ingestSignal(text, imagePath: imagePath);
     } catch (e) {
+      _errorMessage = e.toString();
       print("Error ingesting signal: $e");
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+
     return success;
   }
 
@@ -78,14 +84,21 @@ class CrisisProvider extends ChangeNotifier {
   }
 
   Future<void> runSimulation() async {
-    if (_selectedCrisis == null) return;
-    
+    if (_selectedCrisis == null) {
+      _errorMessage = "No crisis selected";
+      notifyListeners();
+      return;
+    }
+
     _isSimulating = true;
+    _errorMessage = null;
     notifyListeners();
-    
+
     try {
-      _selectedSimulation = await _simulationService.runSimulation(_selectedCrisis!.id);
+      _selectedSimulation =
+          await _simulationService.runSimulation(_selectedCrisis!.id);
     } catch (e) {
+      _errorMessage = e.toString();
       print("Error running simulation: $e");
     } finally {
       _isSimulating = false;
@@ -94,14 +107,22 @@ class CrisisProvider extends ChangeNotifier {
   }
 
   Future<void> loadTrace() async {
-    if (_selectedCrisis == null) return;
-    
+    if (_selectedCrisis == null) {
+      _errorMessage = "No crisis selected for trace";
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
-    
+
     try {
-      _selectedTrace = await _apiService.getTrace(_selectedCrisis!.id);
+      _selectedTrace =
+          await _apiService.getTrace(_selectedCrisis!.id);
     } catch (e) {
+      _errorMessage = e.toString();
       print("Error loading trace: $e");
     } finally {
       _isLoading = false;

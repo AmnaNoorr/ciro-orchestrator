@@ -70,8 +70,11 @@ def detect(normalized_signal: dict) -> dict:
 
     # Check if signal crosses detection threshold
     is_crisis = (
-        keyword_count >= KEYWORD_THRESHOLD and
-        weather["threshold_exceeded"]
+        keyword_count >= 2 or
+        "explosion" in crisis_hint.lower() or
+        "fire" in crisis_hint.lower() or
+        weather["threshold_exceeded"] or
+        traffic["spike_percent"] > CONGESTION_THRESHOLD
     )
 
     severity = classify_severity(
