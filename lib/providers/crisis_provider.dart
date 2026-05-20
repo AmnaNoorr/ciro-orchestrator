@@ -96,7 +96,10 @@ class CrisisProvider extends ChangeNotifier {
 
     try {
       _selectedSimulation =
-          await _simulationService.runSimulation(_selectedCrisis!.id);
+          await _simulationService.runSimulation(
+            _selectedCrisis!.id,
+            crisisCoordinates: _selectedCrisis!.coordinates,
+          );
     } catch (e) {
       _errorMessage = e.toString();
       print("Error running simulation: $e");

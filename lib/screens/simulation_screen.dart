@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../providers/crisis_provider.dart';
 import '../theme/app_theme.dart';
 import '../config/constants.dart';
@@ -24,12 +25,23 @@ class _SimulationScreenState extends State<SimulationScreen> {
       Completer<GoogleMapController>();
 
   bool _showAfter = false;
+  bool _hasLocationPermission = false;
+  bool _hasShownNoRouteHint = false;
 
   @override
   void initState() {
     super.initState();
+    _initLocationPermission();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<CrisisProvider>(context, listen: false).runSimulation();
+    });
+  }
+
+  Future<void> _initLocationPermission() async {
+    final status = await Permission.locationWhenInUse.request();
+    if (!mounted) return;
+    setState(() {
+      _hasLocationPermission = status.isGranted;
     });
   }
 
@@ -145,32 +157,53 @@ class _SimulationScreenState extends State<SimulationScreen> {
 
           final simulation = provider.selectedSimulation!;
           final crisis = provider.selectedCrisis!;
+          final hasCurrentRoutes = (simulation.blockedRoutes ?? []).isNotEmpty;
+          final hasSimulatedRoutes = (simulation.reroutedPaths ?? []).isNotEmpty;
+
+          if (!_hasShownNoRouteHint &&
+              !hasCurrentRoutes &&
+              !hasSimulatedRoutes) {
+            _hasShownNoRouteHint = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'No route geometry received for this crisis. Showing marker only.',
+                  ),
+                ),
+              );
+            });
+          }
 
           return Stack(
             children: [
               // MAP
-              GoogleMap(
-                mapType: MapType.normal,
-                initialCameraPosition: CameraPosition(
-                  target: crisis.coordinates,
-                  zoom: AppConstants.defaultZoomLevel,
-                ),
-                onMapCreated: (GoogleMapController controller) {
-                  _controller.complete(controller);
-                },
-                polylines: _buildPolylines(simulation),
-                markers: {
-                  Marker(
-                    markerId: const MarkerId('crisis_epicenter'),
-                    position: crisis.coordinates,
-                    icon: BitmapDescriptor.defaultMarkerWithHue(
-                      BitmapDescriptor.hueRed,
-                    ),
-                    infoWindow: InfoWindow(title: crisis.type),
+              Positioned.fill(
+                child: GoogleMap(
+                  mapType: MapType.normal,
+                  initialCameraPosition: CameraPosition(
+                    target: crisis.coordinates,
+                    zoom: AppConstants.defaultZoomLevel,
                   ),
-                },
-                myLocationButtonEnabled: false,
-                zoomControlsEnabled: false,
+                  onMapCreated: (GoogleMapController controller) {
+                    _controller.complete(controller);
+                  },
+                  polylines: _buildPolylines(simulation),
+                  markers: {
+                    Marker(
+                      markerId: const MarkerId('crisis_epicenter'),
+                      position: crisis.coordinates,
+                      icon: BitmapDescriptor.defaultMarkerWithHue(
+                        BitmapDescriptor.hueRed,
+                      ),
+                      infoWindow: InfoWindow(title: crisis.type),
+                    ),
+                  },
+                  myLocationEnabled: _hasLocationPermission,
+                  myLocationButtonEnabled: _hasLocationPermission,
+                  zoomControlsEnabled: false,
+                ),
               ),
 
               // TOGGLE

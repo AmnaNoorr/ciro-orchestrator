@@ -4,8 +4,26 @@ import 'theme/app_theme.dart';
 import 'providers/crisis_provider.dart';
 import 'screens/signal_input_screen.dart';
 
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
+import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (!kIsWeb && Platform.isAndroid) {
+    final GoogleMapsFlutterPlatform mapsImplementation =
+        GoogleMapsFlutterPlatform.instance;
+    if (mapsImplementation is GoogleMapsFlutterAndroid) {
+      try {
+        mapsImplementation.initializeWithRenderer(AndroidMapRenderer.latest);
+      } catch (e) {
+        // Handle initialization error safely
+      }
+    }
+  }
+
   runApp(const CiroApp());
 }
 
