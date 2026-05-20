@@ -1,63 +1,81 @@
 # agents/simulation_agent.py
 # Layer 5 — Simulation & Execution Agent (CRITICAL)
 # Input:  crisis object with _plan from planning_agent
-# Output: simulation dict, alert dict, trace logs list
+# Output: simulation dict, alert dict, trace logs
 #         All match simulation.json, alerts.json, traces.json schemas exactly
 
 import uuid
+import random
 from datetime import datetime, timezone
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
+
 def _ticket_id() -> str:
-    return "TKT-" + str(uuid.uuid4().int)[:4]
+    return "TKT-" + str(random.randint(1000, 9999))
 
 
-def simulate(crisis_object: dict) -> tuple[dict, dict, list]:
-    """
-    Runs all 4 simulations and returns:
-    - simulation_result (matches simulation.json)
-    - alert_result     (matches alerts.json)
-    - trace_logs       (matches traces.json)
-    """
+def _generate_blocked_routes(coords: dict) -> list:
+    """Generate blocked route coordinates around the crisis point."""
+    if not coords or coords.get("lat") is None:
+        return []
+
+    lat, lng = coords["lat"], coords["lng"]
+    return [
+        [
+            {"lat": lat,         "lng": lng},
+            {"lat": lat - 0.002, "lng": lng + 0.004}
+        ],
+        [
+            {"lat": lat - 0.002, "lng": lng + 0.004},
+            {"lat": lat - 0.005, "lng": lng + 0.001}
+        ]
+    ]
+
+
+def _generate_rerouted_paths(coords: dict) -> list:
+    """Generate alternate route coordinates bypassing the crisis point."""
+    if not coords or coords.get("lat") is None:
+        return []
+
+    lat, lng = coords["lat"], coords["lng"]
+    return [
+        [
+            {"lat": lat,         "lng": lng},
+            {"lat": lat + 0.003, "lng": lng - 0.001}
+        ],
+        [
+            {"lat": lat + 0.003, "lng": lng - 0.001},
+            {"lat": lat + 0.005, "lng": lng + 0.007}
+        ],
+        [
+            {"lat": lat + 0.005, "lng": lng + 0.007},
+            {"lat": lat - 0.002, "lng": lng + 0.004}
+        ]
+    ]
+
+
+def simulate(crisis_object: dict) -> tuple:
     crisis_id = crisis_object["id"]
     location = crisis_object["location"]
+    coords = crisis_object.get("coordinates", {"lat": None, "lng": None})
     plan = crisis_object.get("_plan", {})
-    coords = crisis_object.get("coordinates", {"lat": 33.6670, "lng": 72.9911})
+    severity = crisis_object.get("severity", "MEDIUM")
 
-    dispatch = plan.get("dispatch_unit", {"unit": "CDA Rescue Unit", "eta_mins": 10})
-    affected_users = plan.get("estimated_affected_users", 1240)
+    dispatch = plan.get("dispatch_unit", {"unit": "NDMA Rescue Unit", "eta_mins": 10})
+    affected_users = plan.get("estimated_affected_users", 1200)
+    alert_radius = plan.get("alert_radius_km", 2)
 
-    # --- Simulation 1: Mock blocked routes (around flood coords) ---
-    blocked_routes = [
-        [
-            {"lat": coords["lat"],        "lng": coords["lng"]},
-            {"lat": coords["lat"] - 0.002, "lng": coords["lng"] + 0.004}
-        ],
-        [
-            {"lat": coords["lat"] - 0.002, "lng": coords["lng"] + 0.004},
-            {"lat": coords["lat"] - 0.005, "lng": coords["lng"] + 0.001}
-        ]
-    ]
+    blocked_routes = _generate_blocked_routes(coords)
+    rerouted_paths = _generate_rerouted_paths(coords)
 
-    # --- Simulation 2: Mock rerouted paths (bypass routes) ---
-    rerouted_paths = [
-        [
-            {"lat": coords["lat"],        "lng": coords["lng"]},
-            {"lat": coords["lat"] + 0.003, "lng": coords["lng"] - 0.001}
-        ],
-        [
-            {"lat": coords["lat"] + 0.003, "lng": coords["lng"] - 0.001},
-            {"lat": coords["lat"] + 0.005, "lng": coords["lng"] + 0.007}
-        ],
-        [
-            {"lat": coords["lat"] + 0.005, "lng": coords["lng"] + 0.007},
-            {"lat": coords["lat"] - 0.002, "lng": coords["lng"] + 0.004}
-        ]
-    ]
+    # Congestion reduction varies by severity
+    congestion_reduced = {"HIGH": random.randint(40, 60),
+                          "MEDIUM": random.randint(25, 45),
+                          "LOW": random.randint(15, 30)}.get(severity, 35)
 
-    # --- Simulation 3: Emergency ticket ---
     ticket = {
         "id": _ticket_id(),
         "unit": dispatch["unit"],
@@ -65,18 +83,17 @@ def simulate(crisis_object: dict) -> tuple[dict, dict, list]:
         "status": "DISPATCHED"
     }
 
-    # --- Simulation 4: Alert message ---
     alert_message = (
-        f"Alert sent to {affected_users:,} users in {location} "
-        f"regarding {crisis_object['type']}."
+        f"Alert sent to {affected_users:,} users within {alert_radius}km of "
+        f"{location} regarding {crisis_object['type']}."
     )
 
-    # --- Assemble simulation result — matches simulation.json schema ---
+    # Simulation result — matches simulation.json schema
     simulation_result = {
         crisis_id: {
             "kpis": {
-                "congestionReduced": 45,
-                "routesCleared": 3,
+                "congestionReduced": congestion_reduced,
+                "routesCleared": len(rerouted_paths),
                 "alertsSent": affected_users,
                 "unitsDispatched": 2
             },
@@ -87,7 +104,7 @@ def simulate(crisis_object: dict) -> tuple[dict, dict, list]:
         }
     }
 
-    # --- Alert object — matches alerts.json schema ---
+    # Alert object — matches alerts.json schema
     alert_result = {
         "id": "a-" + str(uuid.uuid4())[:8],
         "crisisId": crisis_id,
@@ -99,15 +116,15 @@ def simulate(crisis_object: dict) -> tuple[dict, dict, list]:
         "timestamp": _now()
     }
 
-    # --- Trace logs — matches traces.json schema exactly ---
+    # Trace logs — matches traces.json schema
     trace_logs = [
         {
             "agent": "SignalAgent",
             "action": "Ingested Report",
             "timestamp": _now(),
             "reasoning": (
-                f"Received input text '{crisis_object.get('_raw_text', 'citizen report')}'. "
-                f"Parsed language and extracted flood keywords."
+                f"Received input: '{crisis_object.get('_raw_text', 'citizen report')}'. "
+                f"Parsed language and extracted flood-related keywords."
             ),
             "color": "#00E5FF"
         },
@@ -116,9 +133,8 @@ def simulate(crisis_object: dict) -> tuple[dict, dict, list]:
             "action": "Correlated Data",
             "timestamp": _now(),
             "reasoning": (
-                f"Cross-referenced {location} coordinates with weather data. "
-                f"Identified high correlation. Set confidence to "
-                f"{int(crisis_object.get('confidence', 0.9) * 100)}%."
+                f"Cross-referenced {location} with simulated weather and traffic data. "
+                f"Confidence set to {int(crisis_object.get('confidence', 0.9) * 100)}%."
             ),
             "color": "#FFC400"
         },
@@ -127,21 +143,21 @@ def simulate(crisis_object: dict) -> tuple[dict, dict, list]:
             "action": "Generated Response Plan",
             "timestamp": _now(),
             "reasoning": (
-                f"Determined impact radius {plan.get('alert_radius_km', 2)}km. "
-                f"Formulated plan: Dispatch {dispatch['unit']}, "
-                f"Alert {affected_users:,} users, "
-                f"{plan.get('reroute_suggestion', 'Reroute traffic')}."
+                f"Alert radius: {alert_radius}km. "
+                f"Dispatching {dispatch['unit']}. "
+                f"Alerting {affected_users:,} users."
             ),
             "color": "#FF3D00"
         },
         {
             "agent": "SimulationAgent",
-            "action": "Simulated Rerouting",
+            "action": "Simulated Execution",
             "timestamp": _now(),
             "reasoning": (
-                f"Executed traffic simulation. Blocking {len(blocked_routes)} primary routes in {location}. "
-                f"Calculated {len(rerouted_paths)} alternative paths. "
-                f"Ticket {ticket['id']} created. ETA: {ticket['eta']}."
+                f"Blocked {len(blocked_routes)} routes near {location}. "
+                f"Generated {len(rerouted_paths)} alternate paths. "
+                f"Ticket {ticket['id']} created. ETA: {ticket['eta']}. "
+                f"Congestion reduced by {congestion_reduced}%."
             ),
             "color": "#00E676"
         }

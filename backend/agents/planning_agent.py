@@ -1,58 +1,72 @@
 # agents/planning_agent.py
 # Layer 4 — Action Planning Agent
 # Input:  crisis object from reasoning_agent
-# Output: crisis object enriched with finalized actions + plan metadata
-# Note:   Gemini already generates recommendedActions and impacts.
-#         This agent validates, enriches, and adds routing/dispatch specifics.
+# Output: crisis object enriched with dispatch + reroute plan
 
-DISPATCH_UNITS = [
-    {"unit": "CDA Rescue Unit 4", "type": "rescue", "eta_mins": 12},
-    {"unit": "NDMA Team Alpha",   "type": "rescue", "eta_mins": 8},
-    {"unit": "Water Pump Unit 3", "type": "pump",   "eta_mins": 15},
-    {"unit": "Fire Tender F-8",   "type": "fire",   "eta_mins": 10},
+import random
+
+RESCUE_UNITS = [
+    {"unit": "CDA Rescue Unit 4",   "type": "rescue", "eta_mins": 12},
+    {"unit": "NDMA Team Alpha",     "type": "rescue", "eta_mins": 8},
+    {"unit": "PDMA Response Unit",  "type": "rescue", "eta_mins": 15},
+    {"unit": "1122 Rescue Service", "type": "rescue", "eta_mins": 10},
+    {"unit": "Water Pump Unit 3",   "type": "pump",   "eta_mins": 14},
+    {"unit": "Fire Tender Unit 2",  "type": "fire",   "eta_mins": 9},
 ]
 
-REROUTE_SUGGESTIONS = {
-    "G-10": "Redirect via 9th Avenue → Khanna Pull",
-    "G-9":  "Redirect via Srinagar Highway",
-    "F-8":  "Redirect via Margalla Road",
-    "DEFAULT": "Use alternate arterial roads — check Google Maps"
-}
+
+def get_dispatch_unit(crisis_type: str, location: str) -> dict:
+    """Pick relevant dispatch unit based on crisis type."""
+    crisis_lower = crisis_type.lower()
+    location_upper = location.upper()
+
+    if "fire" in crisis_lower:
+        unit = next((u for u in RESCUE_UNITS if u["type"] == "fire"), RESCUE_UNITS[0])
+    elif "flood" in crisis_lower or "water" in crisis_lower:
+        unit = next((u for u in RESCUE_UNITS if u["type"] == "pump"), RESCUE_UNITS[0])
+    else:
+        unit = random.choice([u for u in RESCUE_UNITS if u["type"] == "rescue"])
+
+    # Vary ETA slightly based on location
+    eta_variation = random.randint(-2, 4)
+    unit = dict(unit)  # copy so we don't mutate original
+    unit["eta_mins"] = max(5, unit["eta_mins"] + eta_variation)
+    return unit
 
 
-def get_dispatch_unit(crisis_type: str) -> dict:
-    """Pick the most relevant dispatch unit based on crisis type."""
-    if "flood" in crisis_type.lower():
-        return next((u for u in DISPATCH_UNITS if u["type"] == "rescue"), DISPATCH_UNITS[0])
-    if "fire" in crisis_type.lower():
-        return next((u for u in DISPATCH_UNITS if u["type"] == "fire"), DISPATCH_UNITS[0])
-    return DISPATCH_UNITS[0]
+def get_alert_radius(severity: str) -> int:
+    """Alert radius in km based on severity."""
+    return {"HIGH": 3, "MEDIUM": 2, "LOW": 1}.get(severity, 2)
 
 
-def get_reroute(location: str) -> str:
-    for key, suggestion in REROUTE_SUGGESTIONS.items():
-        if key in location.upper():
-            return suggestion
-    return REROUTE_SUGGESTIONS["DEFAULT"]
+def get_affected_users(severity: str, location: str) -> int:
+    """Estimate affected users based on severity and city density."""
+    location_upper = location.upper()
+    base = {"HIGH": 2000, "MEDIUM": 1000, "LOW": 500}.get(severity, 1000)
+
+    if any(c in location_upper for c in ["KARACHI", "LAHORE"]):
+        multiplier = random.uniform(1.5, 2.5)
+    elif any(c in location_upper for c in ["ISLAMABAD", "RAWALPINDI", "FAISALABAD"]):
+        multiplier = random.uniform(1.0, 1.8)
+    else:
+        multiplier = random.uniform(0.6, 1.2)
+
+    return int(base * multiplier)
 
 
 def plan(crisis_object: dict) -> dict:
-    """
-    Enriches the crisis object with dispatch unit and reroute plan.
-    Returns the same crisis object with added plan metadata.
-    """
-    crisis_type = crisis_object.get("type", "")
+    crisis_type = crisis_object.get("type", "Urban Flooding")
     location = crisis_object.get("location", "")
+    severity = crisis_object.get("severity", "MEDIUM")
 
-    dispatch_unit = get_dispatch_unit(crisis_type)
-    reroute = get_reroute(location)
+    dispatch_unit = get_dispatch_unit(crisis_type, location)
+    alert_radius = get_alert_radius(severity)
+    affected_users = get_affected_users(severity, location)
 
-    # Attach plan metadata used by simulation_agent
     crisis_object["_plan"] = {
         "dispatch_unit": dispatch_unit,
-        "reroute_suggestion": reroute,
-        "alert_radius_km": 2,
-        "estimated_affected_users": 1240,
+        "alert_radius_km": alert_radius,
+        "estimated_affected_users": affected_users,
     }
 
     return crisis_object
