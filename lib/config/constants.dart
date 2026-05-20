@@ -4,14 +4,14 @@
 library;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-const bool kDemoMode = false;
+const bool kDemoMode = bool.fromEnvironment('DEMO_MODE', defaultValue: true);
 
 class AppConstants {
   // API Configuration
   // static const String baseUrl = 'http://10.0.2.2:8000';
-  static const String baseUrl = 'http://192.168.1.9:8000';
+  static const String baseUrl = 'https://ciro-backend-809826766032.us-central1.run.app/docs';
   // static const String websocketUrl = 'ws://10.0.2.2:8000/ws';
-  static const String websocketUrl = 'ws://192.168.1.9:8000/ws';
+  static const String websocketUrl = 'ws://ciro-backend-809826766032.us-central1.run.app/docs/ws';
 
   // Demo Specific
   static const int demoEventIntervalSeconds = 6;

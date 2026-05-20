@@ -29,6 +29,11 @@ class _SignalInputScreenState extends State<SignalInputScreen> {
         context,
         MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
+    } else if (mounted) {
+      final error = provider.errorMessage ?? 'Unable to send signal right now.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
     }
   }
 
