@@ -1,6 +1,7 @@
 /// Global Demo Mode Toggle
 /// When true: Uses mock JSON and simulated events.
 /// When false: Connects to real backend endpoints.
+library;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 const bool kDemoMode = false;
@@ -8,9 +9,9 @@ const bool kDemoMode = false;
 class AppConstants {
   // API Configuration
   // static const String baseUrl = 'http://10.0.2.2:8000';
-  static const String baseUrl = 'http://192.168.1.10:8000';
+  static const String baseUrl = 'http://192.168.1.9:8000';
   // static const String websocketUrl = 'ws://10.0.2.2:8000/ws';
-  static const String websocketUrl = 'ws://192.168.1.10:8000/ws';
+  static const String websocketUrl = 'ws://192.168.1.9:8000/ws';
 
   // Demo Specific
   static const int demoEventIntervalSeconds = 6;

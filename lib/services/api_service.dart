@@ -67,7 +67,7 @@ class ApiService {
 
       final decoded = json.decode(response);
 
-      // ✅ CASE 1: API returns a LIST
+      // ✅ If traces.json is a LIST
       if (decoded is List) {
         final traceData = decoded.firstWhere(
           (t) => t['crisisId'] == crisisId,
@@ -81,12 +81,9 @@ class ApiService {
         );
       }
 
-      // ✅ CASE 2: API returns a MAP (most likely your case)
+      // ✅ If traces.json is a SINGLE OBJECT
       if (decoded is Map<String, dynamic>) {
-        if (decoded['crisisId'] == crisisId) {
-          return TraceModel.fromJson(decoded);
-        }
-        return null;
+        return TraceModel.fromJson(decoded);
       }
 
       return null;
@@ -94,9 +91,12 @@ class ApiService {
       try {
         final response = await _dio.get('/traces/$crisisId');
 
-        return TraceModel.fromJson(
-          Map<String, dynamic>.from(response.data),
-        );
+        // ✅ FIX HERE
+        final data = Map<String, dynamic>.from(response.data);
+
+        return TraceModel.fromJson(data);
+      } on DioException catch (e) {
+        throw Exception('Failed to load trace: ${e.message}');
       } catch (e) {
         throw Exception('Failed to load trace: $e');
       }

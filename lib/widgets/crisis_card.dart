@@ -4,7 +4,6 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../models/crisis_model.dart';
 import '../theme/app_theme.dart';
 import 'severity_badge.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 class CrisisCard extends StatelessWidget {
   final CrisisModel crisis;
