@@ -1,6 +1,6 @@
 # Ciro Orchestrator
 
-Comprehensive README for the Ciro Orchestrator project. This document describes the repository, setup, architecture, development workflow, and where to add images/screenshots for documentation and the README itself.
+Ciro Orchestrator — Flood Crisis Simulation. This repository contains a crisis simulation platform focused on flood events. It includes a Python backend that runs agents for detection, reasoning and planning, a simulation engine for modeling flood scenarios, and a Flutter client for visualization and operator interaction. The system supports ingesting sensor and telemetry data, generating alerts and risk maps, running simulated scenarios, and coordinating response actions.
 
 ---
 
@@ -26,14 +26,16 @@ Comprehensive README for the Ciro Orchestrator project. This document describes 
 
 ## Project Overview
 
-Ciro Orchestrator is a multi-component system combining a Python backend (APIs, agents, simulation) with a Flutter front-end application (mobile/web). It includes agents for detection, reasoning, planning, signal handling and simulation, and services for ingestion, pipelines, and websockets.
+Ciro Orchestrator is a flood-focused crisis simulation platform. It pairs a Python backend (APIs, agents, and a simulation engine) with a Flutter front-end application (mobile and web) to support preparedness and response for flood events. Key capabilities include real-time ingestion of sensor and river-level data, probabilistic flood modeling, alert generation, evacuation and resource planning suggestions, multi-agent coordination for automated responses, and timeline-based simulation playback for drills and training.
 
 ## Features
 
-- Real-time ingestion and websocket streaming
-- Agent-based detection, reasoning, and planning
-- Simulation and trace playback
-- Cross-platform Flutter client (mobile, web, desktop)
+- Real-time ingestion of environmental sensors and telemetry
+- Flood modeling and risk-map generation
+- Automated detection, reasoning, and evacuation planning agents
+- Scenario simulation and timeline playback for training and testing
+- Websocket streaming for live dashboards and alerts
+- Cross-platform Flutter client for on-the-go situational awareness
 
 ## Repository Structure
 
