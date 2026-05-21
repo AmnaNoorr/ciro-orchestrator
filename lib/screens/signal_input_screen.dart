@@ -5,7 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'dart:ui';
 import '../theme/app_theme.dart';
 import '../providers/crisis_provider.dart';
-import 'dashboard_screen.dart';
+import 'crisis_detail_screen.dart';
 
 class SignalInputScreen extends StatefulWidget {
   const SignalInputScreen({super.key});
@@ -16,18 +16,25 @@ class SignalInputScreen extends StatefulWidget {
 
 class _SignalInputScreenState extends State<SignalInputScreen> {
   final TextEditingController _controller = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
   bool _isUrdu = false;
 
   void _submitSignal() async {
     if (_controller.text.trim().isEmpty) return;
     
     final provider = Provider.of<CrisisProvider>(context, listen: false);
-    final success = await provider.ingestSignal(_controller.text);
+    final success = await provider.ingestSignal(
+      _controller.text,
+      language: _isUrdu ? 'ur' : 'en',
+      location: _locationController.text.trim().isEmpty
+          ? null
+          : _locationController.text.trim(),
+    );
     
     if (success && mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        MaterialPageRoute(builder: (_) => const CrisisDetailScreen()),
       );
     } else if (mounted) {
       final error = provider.errorMessage ?? 'Unable to send signal right now.';
@@ -124,6 +131,14 @@ class _SignalInputScreenState extends State<SignalInputScreen> {
                                 decoration: InputDecoration(
                                   hintText: _isUrdu ? 'G-10 mein pani bhar gaya hai...' : 'Flash flood happening in G-10...',
                                 ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _locationController,
+                              style: const TextStyle(color: AppTheme.textPrimary),
+                              decoration: const InputDecoration(
+                                hintText: 'Detected place (e.g., Srinagar Highway, G-10)',
                               ),
                             ),
                             const SizedBox(height: 16),

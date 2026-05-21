@@ -8,10 +8,14 @@ const bool kDemoMode = bool.fromEnvironment('DEMO_MODE', defaultValue: true);
 
 class AppConstants {
   // API Configuration
-  // static const String baseUrl = 'http://10.0.2.2:8000';
-  static const String baseUrl = 'https://ciro-backend-809826766032.us-central1.run.app/docs';
-  // static const String websocketUrl = 'ws://10.0.2.2:8000/ws';
-  static const String websocketUrl = 'ws://ciro-backend-809826766032.us-central1.run.app/docs/ws';
+  static const String baseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: 'https://ciro-backend-809826766032.us-central1.run.app',
+  );
+  static const String websocketUrl = String.fromEnvironment(
+    'WS_URL',
+    defaultValue: 'wss://ciro-backend-809826766032.us-central1.run.app/ws',
+  );
 
   // Demo Specific
   static const int demoEventIntervalSeconds = 6;

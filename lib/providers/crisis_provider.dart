@@ -56,7 +56,12 @@ class CrisisProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> ingestSignal(String text, {String? imagePath}) async {
+  Future<bool> ingestSignal(
+    String text, {
+    String? imagePath,
+    String language = 'en',
+    String? location,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -64,7 +69,28 @@ class CrisisProvider extends ChangeNotifier {
     bool success = false;
 
     try {
-      success = await _apiService.ingestSignal(text, imagePath: imagePath);
+      final result = await _apiService.ingestSignal(
+        text,
+        imagePath: imagePath,
+        language: language,
+        location: location,
+      );
+      success = result.success;
+
+      if (!success) {
+        _errorMessage = result.message ?? 'Signal did not produce a crisis.';
+      } else if (result.crisis != null) {
+        final crisis = result.crisis!;
+        final existingIndex = _crises.indexWhere((c) => c.id == crisis.id);
+        if (existingIndex >= 0) {
+          _crises[existingIndex] = crisis;
+        } else {
+          _crises.insert(0, crisis);
+        }
+        _selectedCrisis = crisis;
+        _selectedTrace = null;
+        _selectedSimulation = null;
+      }
     } catch (e) {
       _errorMessage = e.toString();
       print("Error ingesting signal: $e");

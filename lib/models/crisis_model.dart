@@ -43,7 +43,8 @@ class CrisisModel {
   });
 
   factory CrisisModel.fromJson(Map<String, dynamic> json) {
-    final LatLng parsedCoordinates = _parseCoordinates(json);
+    final location = (json['location'] ?? '').toString();
+    final LatLng parsedCoordinates = _parseCoordinates(json, location: location);
 
     var impactsList = json['impacts'] as List? ?? [];
     List<ImpactModel> parsedImpacts = impactsList.map((i) => ImpactModel.fromJson(i)).toList();
@@ -54,7 +55,7 @@ class CrisisModel {
     return CrisisModel(
       id: json['id'] ?? '',
       type: json['type'] ?? '',
-      location: json['location'] ?? '',
+      location: location,
       coordinates: parsedCoordinates,
       severity: json['severity'] ?? 'LOW',
       timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
@@ -66,7 +67,10 @@ class CrisisModel {
     );
   }
 
-  static LatLng _parseCoordinates(Map<String, dynamic> json) {
+  static LatLng _parseCoordinates(
+    Map<String, dynamic> json, {
+    required String location,
+  }) {
     final dynamic rawCoords = json['coordinates'];
 
     double? lat;
@@ -83,11 +87,14 @@ class CrisisModel {
     lat ??= _asDouble(json['lat']) ?? _asDouble(json['latitude']);
     lng ??= _asDouble(json['lng']) ?? _asDouble(json['longitude']);
 
-    if (!_isValidCoordinate(lat, lng)) {
-      return AppConstants.defaultMapCenter;
+    if (_isValidCoordinate(lat, lng)) {
+      return LatLng(lat!, lng!);
     }
 
-    return LatLng(lat!, lng!);
+    final inferred = _inferCoordinatesFromLocation(location);
+    if (inferred != null) return inferred;
+
+    return AppConstants.defaultMapCenter;
   }
 
   static double? _asDouble(dynamic value) {
@@ -103,5 +110,34 @@ class CrisisModel {
     if (lat < -90.0 || lat > 90.0) return false;
     if (lng < -180.0 || lng > 180.0) return false;
     return true;
+  }
+
+  static LatLng? _inferCoordinatesFromLocation(String location) {
+    final value = location.toLowerCase();
+    const cityCenters = <String, LatLng>{
+      'islamabad': LatLng(33.6844, 73.0479),
+      'rawalpindi': LatLng(33.6007, 73.0679),
+      'lahore': LatLng(31.5204, 74.3587),
+      'karachi': LatLng(24.8607, 67.0011),
+      'multan': LatLng(30.1575, 71.5249),
+      'faisalabad': LatLng(31.4504, 73.1350),
+      'peshawar': LatLng(34.0151, 71.5249),
+      'quetta': LatLng(30.1798, 66.9750),
+      'hyderabad': LatLng(25.3960, 68.3578),
+      'sialkot': LatLng(32.4945, 74.5229),
+      'gujranwala': LatLng(32.1877, 74.1945),
+      'bahawalpur': LatLng(29.3956, 71.6836),
+      'sukkur': LatLng(27.7052, 68.8574),
+      'abbottabad': LatLng(34.1688, 73.2215),
+      'swat': LatLng(34.7717, 72.3602),
+      'gilgit': LatLng(35.9208, 74.3144),
+      'muzaffarabad': LatLng(34.3700, 73.4700),
+    };
+
+    for (final entry in cityCenters.entries) {
+      if (value.contains(entry.key)) return entry.value;
+    }
+
+    return null;
   }
 }

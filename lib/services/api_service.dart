@@ -6,6 +6,20 @@ import '../config/constants.dart';
 import '../models/crisis_model.dart';
 import '../models/trace_model.dart';
 
+class IngestResult {
+  final bool success;
+  final String? crisisId;
+  final String? message;
+  final CrisisModel? crisis;
+
+  const IngestResult({
+    required this.success,
+    this.crisisId,
+    this.message,
+    this.crisis,
+  });
+}
+
 class ApiService {
   final Dio _dio = Dio(BaseOptions(
     baseUrl: AppConstants.baseUrl,
@@ -40,22 +54,67 @@ class ApiService {
     }
   }
 
-  Future<bool> ingestSignal(String text, {String? imagePath}) async {
+  Future<IngestResult> ingestSignal(
+    String text, {
+    String? imagePath,
+    String language = 'en',
+    String? location,
+  }) async {
     if (kDemoMode) {
       await Future.delayed(AppConstants.animationMedium);
-      return true;
+      final crises = await getCrises();
+      final latest = crises.isNotEmpty ? crises.first : null;
+      return IngestResult(
+        success: latest != null,
+        crisisId: latest?.id,
+        message: latest != null ? 'Demo crisis loaded' : 'No demo crisis found',
+        crisis: latest,
+      );
     }
 
     try {
-      await _dio.post('/ingest', data: {
+      final response = await _dio.post('/ingest', data: {
         'text': text,
-        'imagePath': imagePath,
+        'language': language,
+        'location': location,
+        'photo_url': imagePath,
       });
 
-      return true;
+      final payload = Map<String, dynamic>.from(response.data as Map);
+      final status = payload['status']?.toString() ?? '';
+      final crisisId = payload['crisis_id']?.toString();
+      final message = payload['message']?.toString();
+
+      if (status != 'crisis_detected' || crisisId == null || crisisId.isEmpty) {
+        return IngestResult(
+          success: false,
+          crisisId: crisisId,
+          message: message ?? 'Signal did not produce a crisis',
+        );
+      }
+
+      final crisis = await getCrisisById(crisisId);
+      return IngestResult(
+        success: true,
+        crisisId: crisisId,
+        message: message,
+        crisis: crisis,
+      );
     } catch (e) {
       throw Exception('Failed to ingest signal: $e');
     }
+  }
+
+  Future<CrisisModel> getCrisisById(String crisisId) async {
+    if (kDemoMode) {
+      final crises = await getCrises();
+      return crises.firstWhere(
+        (c) => c.id == crisisId,
+        orElse: () => crises.first,
+      );
+    }
+    final response = await _dio.get('/crises/$crisisId');
+    return CrisisModel.fromJson(Map<String, dynamic>.from(response.data as Map));
   }
 
   Future<TraceModel?> getTrace(String crisisId) async {

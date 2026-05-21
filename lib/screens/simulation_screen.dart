@@ -23,10 +23,13 @@ class SimulationScreen extends StatefulWidget {
 class _SimulationScreenState extends State<SimulationScreen> {
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
+  GoogleMapController? _mapController;
 
   bool _showAfter = false;
   bool _hasLocationPermission = false;
   bool _hasShownNoRouteHint = false;
+  String? _lastRenderedCrisisId;
+  Set<Marker> _markers = const <Marker>{};
 
   @override
   void initState() {
@@ -43,6 +46,51 @@ class _SimulationScreenState extends State<SimulationScreen> {
     setState(() {
       _hasLocationPermission = status.isGranted;
     });
+  }
+
+  Future<void> _syncMapWithCrisis({
+    required String crisisId,
+    required String title,
+    required LatLng coordinates,
+  }) async {
+    if (_lastRenderedCrisisId == crisisId && _markers.isNotEmpty) {
+      return;
+    }
+
+    if (!_isValidCoordinate(coordinates)) {
+      return;
+    }
+
+    final newMarker = Marker(
+      markerId: const MarkerId('crisis_epicenter'),
+      position: coordinates,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      infoWindow: InfoWindow(title: title),
+    );
+
+    if (mounted) {
+      setState(() {
+        // Explicitly remove stale markers, then add latest backend marker.
+        _markers = <Marker>{newMarker};
+        _lastRenderedCrisisId = crisisId;
+      });
+    }
+
+    final controller = _mapController;
+    if (controller != null) {
+      await controller.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: coordinates, zoom: AppConstants.defaultZoomLevel),
+        ),
+      );
+    }
+  }
+
+  bool _isValidCoordinate(LatLng point) {
+    if (point.latitude == 0.0 && point.longitude == 0.0) return false;
+    if (point.latitude < -90.0 || point.latitude > 90.0) return false;
+    if (point.longitude < -180.0 || point.longitude > 180.0) return false;
+    return true;
   }
 
   Set<Polyline> _buildPolylines(SimulationModel simulation) {
@@ -176,6 +224,14 @@ class _SimulationScreenState extends State<SimulationScreen> {
             });
           }
 
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _syncMapWithCrisis(
+              crisisId: crisis.id,
+              title: crisis.type,
+              coordinates: crisis.coordinates,
+            );
+          });
+
           return Stack(
             children: [
               // MAP
@@ -187,19 +243,18 @@ class _SimulationScreenState extends State<SimulationScreen> {
                     zoom: AppConstants.defaultZoomLevel,
                   ),
                   onMapCreated: (GoogleMapController controller) {
-                    _controller.complete(controller);
+                    if (!_controller.isCompleted) {
+                      _controller.complete(controller);
+                    }
+                    _mapController = controller;
+                    _syncMapWithCrisis(
+                      crisisId: crisis.id,
+                      title: crisis.type,
+                      coordinates: crisis.coordinates,
+                    );
                   },
                   polylines: _buildPolylines(simulation),
-                  markers: {
-                    Marker(
-                      markerId: const MarkerId('crisis_epicenter'),
-                      position: crisis.coordinates,
-                      icon: BitmapDescriptor.defaultMarkerWithHue(
-                        BitmapDescriptor.hueRed,
-                      ),
-                      infoWindow: InfoWindow(title: crisis.type),
-                    ),
-                  },
+                  markers: _markers,
                   myLocationEnabled: _hasLocationPermission,
                   myLocationButtonEnabled: _hasLocationPermission,
                   zoomControlsEnabled: false,
